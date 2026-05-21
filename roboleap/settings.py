@@ -1,4 +1,10 @@
+import os
 from pathlib import Path
+
+try:
+    import dj_database_url
+except ImportError:
+    dj_database_url = None
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -35,12 +41,17 @@ MIDDLEWARE = [
 ROOT_URLCONF = "roboleap.urls"
 AUTH_USER_MODEL = "academy.User"
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+if dj_database_url and os.environ.get("DATABASE_URL"):
+    DATABASES = {
+        "default": dj_database_url.config(conn_max_age=600)
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
@@ -77,3 +88,6 @@ LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Africa/Cairo"
 USE_I18N = True
 USE_TZ = True
+DEBUG = False
+
+ALLOWED_HOSTS = ["postgresql://roboleap_user:FhU0PrqqIaJZ8PkR9q6Q3hCFSCE7A1mh@dpg-d87ji1l7vvec73dveg50-a.ohio-postgres.render.com/roboleap"]
