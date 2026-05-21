@@ -73,7 +73,18 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 50,
 }
 
+import os
 
+if os.environ.get("CREATE_SUPERUSER"):
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+
+    if not User.objects.filter(username="admin").exists():
+        User.objects.create_superuser(
+            username="admin",
+            email="admin@test.com",
+            password="123"
+        )
 # 📄 Templates
 TEMPLATES = [
     {
