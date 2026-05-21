@@ -1,0 +1,4 @@
+first_name,last_name,email,phone,parent_name,parent_phone,date_of_birth
+Omar,Ali,omar@example.com,01000000001,Ali Hassan,01111111111,2012-05-10
+Sara,Ahmed,sara@example.com,01000000002,Ahmed Mahmoud,01111111112,2013-03-15
+Youssef,Samir,youssef@example.com,01000000003,Samir Adel,01111111113,
