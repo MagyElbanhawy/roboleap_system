@@ -9,14 +9,6 @@ python manage.py seed_data        # creates demo users, courses, students, payme
 python manage.py runserver
 ```
 
-Demo credentials after seeding:
-
-| Username     | Password      | Role       |
-|-------------|---------------|------------|
-| admin        | admin123      | Admin      |
-| finance      | finance123    | Finance    |
-| secretary    | secretary123  | Secretary  |
-| instructor1  | instr123      | Instructor |
 
 ---
 
