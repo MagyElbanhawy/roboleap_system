@@ -16,12 +16,6 @@ python manage.py runserver
 
 All endpoints require a token. Get one:
 
-```http
-POST /api/auth/login/
-Content-Type: application/json
-
-{ "username": "finance", "password": "finance123" }
-```
 
 Returns `{ "token": "abc123..." }`. Use in all requests:
 
