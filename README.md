@@ -9,14 +9,6 @@ python manage.py seed_data        # creates demo users, courses, students, payme
 python manage.py runserver
 ```
 
-Demo credentials after seeding:
-
-| Username     | Password      | Role       |
-|-------------|---------------|------------|
-| admin        | admin123      | Admin      |
-| finance      | finance123    | Finance    |
-| secretary    | secretary123  | Secretary  |
-| instructor1  | instr123      | Instructor |
 
 ---
 
@@ -24,12 +16,6 @@ Demo credentials after seeding:
 
 All endpoints require a token. Get one:
 
-```http
-POST /api/auth/login/
-Content-Type: application/json
-
-{ "username": "finance", "password": "finance123" }
-```
 
 Returns `{ "token": "abc123..." }`. Use in all requests:
 
