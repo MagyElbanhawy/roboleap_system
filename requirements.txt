@@ -4,7 +4,3 @@ django-cors-headers>=4.3
 dj-database-url>=2.1
 psycopg2-binary>=2.9
 gunicorn
-<<<<<<< HEAD
-psycopg2-binary
-=======
->>>>>>> 1b0260fc0b376c8d8a7ed242d885bde822cee8f9
