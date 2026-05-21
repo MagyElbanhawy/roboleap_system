@@ -90,4 +90,4 @@ USE_I18N = True
 USE_TZ = True
 DEBUG = False
 
-ALLOWED_HOSTS = ["postgresql://roboleap_user:FhU0PrqqIaJZ8PkR9q6Q3hCFSCE7A1mh@dpg-d87ji1l7vvec73dveg50-a.ohio-postgres.render.com/roboleap"]
+ALLOWED_HOSTS = ["roboleap-system.onrender.com"]
