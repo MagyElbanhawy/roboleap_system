@@ -1,17 +1,20 @@
 import os
 from pathlib import Path
-
-try:
-    import dj_database_url
-except ImportError:
-    dj_database_url = None
+import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = "change-me-in-production"
-DEBUG = True
-ALLOWED_HOSTS = ["*"]
+# 🔐 SECRET KEY (from environment variable)
+SECRET_KEY = os.getenv("SECRET_KEY", "b592eb60691b9b027afc8f9ee1279588")
 
+# 🚀 Production mode
+DEBUG = False
+
+# 🌐 Allowed hosts
+ALLOWED_HOSTS = ["roboleap-system.onrender.com"]
+
+
+# 📦 Installed apps
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -19,17 +22,25 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+
     # third-party
     "rest_framework",
     "rest_framework.authtoken",
     "corsheaders",
+
     # local
     "academy",
 ]
 
+
+# ⚙️ Middleware
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+
+    # ✅ Static files support
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -38,21 +49,18 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
+
 ROOT_URLCONF = "roboleap.urls"
 AUTH_USER_MODEL = "academy.User"
 
-if dj_database_url and os.environ.get("DATABASE_URL"):
-    DATABASES = {
-        "default": dj_database_url.config(conn_max_age=600)
-    }
-else:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
-        }
-    }
 
+# 🗄️ Database (Render PostgreSQL)
+DATABASES = {
+    "default": dj_database_url.config(conn_max_age=600)
+}
+
+
+# 🔗 Django REST Framework
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.TokenAuthentication",
@@ -64,6 +72,9 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 50,
 }
+
+
+# 📄 Templates
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
@@ -80,14 +91,24 @@ TEMPLATES = [
     },
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True  # tighten in production
 
+# 🌍 CORS (allow React later)
+CORS_ALLOW_ALL_ORIGINS = True
+
+
+# 📁 Static files (IMPORTANT for admin CSS)
 STATIC_URL = "/static/"
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+
+# WhiteNoise config
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+
+# 🌍 Localization
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Africa/Cairo"
 USE_I18N = True
 USE_TZ = True
-DEBUG = False
 
-ALLOWED_HOSTS = ["roboleap-system.onrender.com"]
+
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
