@@ -1,9 +1,95 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import roboleapLogo from "../logo_orange.png";
-
+import "./index.css";
+import "./App.css";
 // ─── API Layer ────────────────────────────────────────────────────────────────
 
-const BASE_URL = "http://localhost:8000";
+
+const API = "https://roboleap-system.onrender.com";
+
+export default function RoboleapApp() {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [user, setUser] = useState(null);
+
+  const handleLogin = async () => {
+    try {
+      const res = await fetch(`${API}/api/auth/login/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const data = await res.json();
+
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+        loadUser(data.token);
+      } else {
+        alert("Invalid login ❌");
+      }
+    } catch (err) {
+      alert("Server error ❌");
+    }
+  };
+
+  const loadUser = async (token) => {
+    const res = await fetch(`${API}/api/auth/me/`, {
+      headers: {
+        Authorization: `Token ${token}`,
+      },
+    });
+
+    const data = await res.json();
+    setUser(data);
+  };
+
+  // 🔐 auto-login if token exists
+  if (!user && localStorage.getItem("token")) {
+    loadUser(localStorage.getItem("token"));
+  }
+
+  // 🔵 UI
+  if (!user) {
+    return (
+  <div id="center">
+    <h1>Roboleap Login</h1>
+
+    <input
+      className="counter"
+      placeholder="Username"
+      onChange={(e) => setUsername(e.target.value)}
+    />
+
+    <input
+      className="counter"
+      type="password"
+      placeholder="Password"
+      onChange={(e) => setPassword(e.target.value)}
+    />
+
+    <button className="counter" onClick={handleLogin}>
+      Login
+    </button>
+  </div>
+);
+  }
+
+  return (
+    <div style={{ padding: 40 }}>
+      <h2>Welcome {user.username} 🚀</h2>
+      <button onClick={() => {
+        localStorage.removeItem("token");
+        setUser(null);
+      }}>
+        Logout
+      </button>
+    </div>
+  );
+}
+/*const BASE_URL = "http://localhost:8000";
 
 function useApi() {
   const token = typeof window !== "undefined" ? localStorage.getItem("rl_token") : null;
@@ -41,7 +127,7 @@ function useApi() {
     logout: () => localStorage.removeItem("rl_token"),
   };
 }
-
+*/
 // ─── Theme & Tokens ───────────────────────────────────────────────────────────
 
 const COLORS = {
@@ -2465,7 +2551,7 @@ function Shell({ user, onLogout }) {
 }
 
 // ─── Root ─────────────────────────────────────────────────────────────────────
-
+/*
 export default function App() {
   const api = useApi();
   const [auth, setAuth] = useState(() => ({
@@ -2505,3 +2591,4 @@ export default function App() {
 
   return <Shell user={auth.user} onLogout={handleLogout} />;
 }
+*/
