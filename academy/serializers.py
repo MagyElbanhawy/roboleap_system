@@ -1,7 +1,7 @@
 from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
 from django.db.models import Sum, Count
 from django.utils import timezone
+from django.utils.dateparse import parse_date
 from .models import (
     User, Instructor, Course, Student,
     Enrollment, Session, Attendance, Payment,
@@ -121,19 +121,42 @@ class PaymentSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(write_only=True, required=True)
+    new_password = serializers.CharField(write_only=True, required=True)
+    new_password_confirm = serializers.CharField(write_only=True, required=True)
+
+    def validate(self, attrs):
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+        if user is None or not user.is_authenticated:
+            raise serializers.ValidationError("Authentication required")
+
+        old = attrs.get("old_password")
+        if not user.check_password(old):
+            raise serializers.ValidationError({"old_password": "Old password is incorrect."})
+
+        npw = attrs.get("new_password")
+        npw2 = attrs.get("new_password_confirm")
+        if npw != npw2:
+            raise serializers.ValidationError({"new_password_confirm": "Passwords do not match."})
+
+        # Add any password policy checks here if desired
+        return attrs
+
+
 class AcademyTransactionSerializer(serializers.ModelSerializer):
-    related_student = serializers.PrimaryKeyRelatedField(
-        queryset=Student.objects.all(), required=False, allow_null=True
-    )
-    enrollment_id = serializers.PrimaryKeyRelatedField(
-        queryset=Enrollment.objects.all(), write_only=True, required=False, allow_null=True
-    )
-    event_date = serializers.DateField(required=False, allow_null=True)
     recorded_by_name = serializers.SerializerMethodField()
     subtotal = serializers.SerializerMethodField()
     category_label = serializers.SerializerMethodField()
     transaction_type_label = serializers.SerializerMethodField()
     related_student_name = serializers.SerializerMethodField()
+    # make related_student optional and accept null
+    related_student = serializers.PrimaryKeyRelatedField(queryset=Student.objects.all(), required=False, allow_null=True)
+    # helper field used only on write to link a Payment via Enrollment
+    enrollment_id = serializers.PrimaryKeyRelatedField(queryset=Enrollment.objects.all(), write_only=True, required=False, allow_null=True)
+    # accept empty string from frontend and parse into a date in validate()
+    event_date = serializers.CharField(required=False, allow_blank=True, allow_null=True)
 
     class Meta:
         model = AcademyTransaction
@@ -144,6 +167,7 @@ class AcademyTransactionSerializer(serializers.ModelSerializer):
             "subtotal", "note", "recorded_by",
             "recorded_by_name", "created_at",
             "related_student", "related_student_name",
+            # write-only helper for linking this transaction to an enrollment
             "enrollment_id",
             "event_name", "event_location", "event_date",
         ]
@@ -164,53 +188,61 @@ class AcademyTransactionSerializer(serializers.ModelSerializer):
     def get_related_student_name(self, obj):
         return str(obj.related_student) if obj.related_student else None
 
-    def validate(self, attrs):
-        request = self.context.get("request")
-        user = getattr(request, "user", None)
-        if user and user.is_authenticated and user.username == "mawada":
-            if attrs.get("transaction_type") != AcademyTransaction.TransactionType.INCOME:
-                raise ValidationError("Mawada can only record income transactions for student payments.")
-            if attrs.get("category") != AcademyTransaction.Category.STUDENT_PAYMENT_SUMMARY:
-                raise ValidationError({
-                    "category": "Mawada may only use the Student Payment Summary category.",
-                })
-            if not attrs.get("related_student"):
-                raise ValidationError({
-                    "related_student": "A student must be selected for Mawada's payment records.",
-                })
-            if not attrs.get("enrollment_id"):
-                raise ValidationError({
-                    "enrollment_id": "Please select the course or competition for the payment.",
-                })
-            if attrs.get("enrollment_id") and attrs.get("related_student") and attrs["enrollment_id"].student_id != attrs["related_student"].id:
-                raise ValidationError({
-                    "enrollment_id": "Selected enrollment does not belong to the chosen student.",
-                })
-        return attrs
-
     def create(self, validated_data):
-        enrollment = validated_data.pop("enrollment_id", None)
         request = self.context.get("request")
         if request and request.user.is_authenticated:
             validated_data["recorded_by"] = request.user
+        # pop enrollment_id if present — it's not a model field on AcademyTransaction
+        enrollment = validated_data.pop("enrollment_id", None)
+        tx = super().create(validated_data)
 
-        transaction = super().create(validated_data)
+        # If this transaction represents a student payment summary, create a confirmed Payment
+        try:
+            from .models import Payment
+        except Exception:
+            Payment = None
 
-        if (
-            enrollment
-            and transaction.transaction_type == AcademyTransaction.TransactionType.INCOME
-            and transaction.category == AcademyTransaction.Category.STUDENT_PAYMENT_SUMMARY
-        ):
-            Payment.objects.create(
-                enrollment=enrollment,
-                amount=transaction.subtotal,
-                method=Payment.Method.CASH,
-                status=Payment.Status.CONFIRMED,
-                note=transaction.note,
-                recorded_by=request.user if request and request.user.is_authenticated else None,
-            )
+        if (tx.category == AcademyTransaction.Category.STUDENT_PAYMENT_SUMMARY) and enrollment and Payment:
+            # create a confirmed Payment record for the enrollment matching the subtotal
+            try:
+                Payment.objects.create(
+                    enrollment=enrollment,
+                    amount=tx.subtotal,
+                    status=Payment.Status.CONFIRMED,
+                    recorded_by=tx.recorded_by,
+                )
+            except Exception:
+                # don't interrupt transaction creation if payment creation fails
+                pass
 
-        return transaction
+        return tx
+
+    def validate(self, attrs):
+        # Allow optional related_student and enrollment_id and accept empty event_date
+        enrollment = attrs.get("enrollment_id")
+        related_student = attrs.get("related_student")
+
+        # Ensure student + enrollment match when category indicates a student payment
+        if attrs.get("category") == AcademyTransaction.Category.STUDENT_PAYMENT_SUMMARY:
+            if not enrollment:
+                raise serializers.ValidationError({"enrollment_id": "This field is required for student payment summary."})
+            # enrollment is a model instance (PrimaryKeyRelatedField should provide it)
+            if related_student and enrollment.student != related_student:
+                raise serializers.ValidationError({"related_student": "Does not match the enrollment's student."})
+
+        # Accept empty event_date strings from frontend
+        event_date = attrs.get("event_date")
+        if isinstance(event_date, str) and event_date.strip() == "":
+            attrs["event_date"] = None
+
+        # Parse non-empty event_date strings into date objects
+        if isinstance(event_date, str) and event_date.strip() != "":
+            parsed = parse_date(event_date)
+            if not parsed:
+                raise serializers.ValidationError({"event_date": "Invalid date format."})
+            attrs["event_date"] = parsed
+
+        return attrs
 
 
 # ─── Attendance ───────────────────────────────────────────────────────────────

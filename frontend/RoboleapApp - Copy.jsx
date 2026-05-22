@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import logoOrange from "../logo_orange.png";
 
 // ─── API Layer ────────────────────────────────────────────────────────────────
 
@@ -133,12 +132,6 @@ const S = {
     letterSpacing: 1.5,
     textTransform: "uppercase",
     marginTop: 1,
-  },
-  logoImage: {
-    width: 24,
-    height: 24,
-    objectFit: "contain",
-    marginLeft: 8,
   },
 
   navSection: { padding: "8px 12px", marginBottom: 4 },
@@ -493,11 +486,8 @@ function LoginPage({ onLogin }) {
       }}>
         <div style={{ marginBottom:32 }}>
           <div style={{ ...S.logoIcon, width:44, height:44, fontSize:20, borderRadius:12, marginBottom:16 }}>R</div>
-          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:4 }}>
-            <div style={{ fontSize:22, fontWeight:700, color:COLORS.text, letterSpacing:-0.5 }}>Roboleap Academy</div>
-            <img src={logoOrange} alt="Roboleap Academy logo" style={S.logoImage} />
-          </div>
-          <div style={{ fontSize:13, color:COLORS.textDim }}>Sign in to your account</div>
+          <div style={{ fontSize:22, fontWeight:700, color:COLORS.text, letterSpacing:-0.5 }}>Roboleap Academy</div>
+          <div style={{ fontSize:13, color:COLORS.textDim, marginTop:4 }}>Sign in to your account</div>
         </div>
 
         <Field label="Username">
@@ -2082,12 +2072,6 @@ function Shell({ user, onLogout }) {
   const role = ROLE_META[effectiveRole] || ROLE_META.secretary;
   const allowedPages = NAV.flatMap(s=>s.items).filter(i=>i.roles.includes(effectiveRole)).map(i=>i.id);
   const [page, setPage] = useState(allowedPages[0] || "dashboard");
-  const api = useApi();
-  const [showChangePw, setShowChangePw] = useState(false);
-  const [pwLoading, setPwLoading] = useState(false);
-  const [pwError, setPwError] = useState(null);
-  const [pwData, setPwData] = useState({ old_password: "", new_password: "", new_password_confirm: "" });
-  const [toast, toastComp] = useToast();
 
   const renderPage = () => {
     switch(page) {
@@ -2111,10 +2095,7 @@ function Shell({ user, onLogout }) {
           <div style={S.logoMark}>
             <div style={S.logoIcon}>R</div>
             <div>
-              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                <div style={S.logoText}>Roboleap</div>
-                <img src={logoOrange} alt="Roboleap Academy logo" style={S.logoImage} />
-              </div>
+              <div style={S.logoText}>Roboleap</div>
               <div style={S.logoSub}>Academy</div>
             </div>
           </div>
@@ -2137,19 +2118,10 @@ function Shell({ user, onLogout }) {
         })}
 
         <div style={S.sidebarFooter}>
-          {toastComp}
           <div style={S.userChip}>
             <div style={S.avatar(role.color)}>{fmt.initials(user.username)}</div>
             <div style={S.userInfo}>
-              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                <div style={S.userName}>{user.username}</div>
-                <button
-                  onClick={() => setShowChangePw(true)}
-                  title="Change password"
-                  style={{ background:"none", border:"none", color:COLORS.accent, cursor:"pointer", fontSize:12, padding:4 }}>
-                  Change
-                </button>
-              </div>
+              <div style={S.userName}>{user.username}</div>
               <div style={{ ...S.userRole, color: role.color }}>{role.label}</div>
             </div>
             <button title="Sign out" onClick={onLogout}
@@ -2157,35 +2129,6 @@ function Shell({ user, onLogout }) {
               ⏻
             </button>
           </div>
-
-          {showChangePw && (
-            <Modal title="Change password" onClose={() => { setShowChangePw(false); setPwError(null); }}>
-              <Field label="Current password">
-                <input type="password" value={pwData.old_password} onChange={e => setPwData(d => ({ ...d, old_password: e.target.value }))} style={S.input} />
-              </Field>
-              <Field label="New password">
-                <input type="password" value={pwData.new_password} onChange={e => setPwData(d => ({ ...d, new_password: e.target.value }))} style={S.input} />
-              </Field>
-              <Field label="Confirm new password">
-                <input type="password" value={pwData.new_password_confirm} onChange={e => setPwData(d => ({ ...d, new_password_confirm: e.target.value }))} style={S.input} />
-              </Field>
-              {pwError && <div style={{ color:COLORS.red, marginBottom:10 }}>{pwError}</div>}
-              <div style={{ display:"flex", gap:8, justifyContent:"flex-end", marginTop:8 }}>
-                <button style={S.btn("ghost")} onClick={() => { setShowChangePw(false); setPwError(null); }}>Cancel</button>
-                <button style={S.btn("primary")} onClick={async () => {
-                  setPwLoading(true); setPwError(null);
-                  try {
-                    await api.post("/api/users/change-password/", pwData);
-                    setShowChangePw(false);
-                    setPwData({ old_password: "", new_password: "", new_password_confirm: "" });
-                    toast("Password changed", "success");
-                  } catch (e) {
-                    setPwError(e.data?.detail || e.message || "Failed to change password");
-                  } finally { setPwLoading(false); }
-                }} disabled={pwLoading}>{pwLoading ? "Saving…" : "Save"}</button>
-              </div>
-            </Modal>
-          )}
         </div>
       </nav>
 

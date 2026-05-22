@@ -19,7 +19,7 @@ from .serializers import (
     SessionSerializer, AttendanceSerializer, PaymentSerializer,
     CourseFinancialSummarySerializer, AcademyTransactionSerializer,
 )
-from .permissions import IsAdmin, IsFinance, IsFinanceExceptMawada, IsFinanceOrMawadaTransactionCreate, IsFinanceOrMawadaRead, IsSecretary, IsInstructor
+from .permissions import IsAdmin, IsFinance, IsSecretary, IsInstructor, IsFinanceExceptMawada, IsFinanceOrMawadaTransactionCreate, IsFinanceOrMawadaRead
 
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -59,6 +59,20 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all().order_by("id")
     serializer_class = UserSerializer
     permission_classes = [IsAdmin]
+
+    @action(detail=False, methods=["post"], url_path="change-password", permission_classes=[permissions.IsAuthenticated])
+    def change_password(self, request):
+        """POST /api/users/change-password/ — allow current user to change their password."""
+        from .serializers import ChangePasswordSerializer
+
+        serializer = ChangePasswordSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+
+        new_password = serializer.validated_data["new_password"]
+        user = request.user
+        user.set_password(new_password)
+        user.save()
+        return Response({"detail": "Password changed successfully."})
 
 
 # ─── Instructors ──────────────────────────────────────────────────────────────
@@ -245,6 +259,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
 class PaymentViewSet(viewsets.ModelViewSet):
     queryset = Payment.objects.select_related("enrollment__student", "enrollment__course", "recorded_by").all()
     serializer_class = PaymentSerializer
+    # Mawada should be blocked entirely from viewing/managing payments here
     permission_classes = [IsFinanceExceptMawada]
 
     def get_queryset(self):
@@ -263,6 +278,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
 class TransactionViewSet(viewsets.ModelViewSet):
     queryset = AcademyTransaction.objects.select_related("recorded_by").all().order_by("-date", "-created_at")
     serializer_class = AcademyTransactionSerializer
+    # Finance users can manage transactions; Mawada may only create transactions (POST)
     permission_classes = [IsFinanceOrMawadaTransactionCreate]
 
 
@@ -273,6 +289,7 @@ class CourseFinancialSummaryView(APIView):
     GET /api/financial/courses/{course_id}/summary/
     Full financial snapshot: metrics + per-student balance table.
     """
+    # block Mawada from viewing course financial summaries
     permission_classes = [IsFinanceExceptMawada]
 
     def get(self, request, course_id):
@@ -290,6 +307,7 @@ class FinancialOverviewView(APIView):
     GET /api/financial/overview/
     Academy-wide financial snapshot for the admin dashboard.
     """
+    # block Mawada from seeing academy-wide finance overview
     permission_classes = [IsFinanceExceptMawada]
 
     def get(self, request):
@@ -378,6 +396,7 @@ class StudentFinancialDetailView(APIView):
     GET /api/financial/students/{student_id}/
     Full payment history and balance summary per student.
     """
+    # Allow finance users and allow Mawada read-only access to student financial detail
     permission_classes = [IsFinanceOrMawadaRead]
 
     def get(self, request, student_id):

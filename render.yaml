@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: roboleap-backend
+    env: python
+    region: oregon
+    plan: starter
+    branch: main
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn roboleap.wsgi --log-file -"
+    envVars:
+      - key: SECRET_KEY
+        value: "__YOUR_SECRET_KEY__"
+      - key: DATABASE_URL
+        value: "__YOUR_DATABASE_URL__"
+      - key: ALLOWED_HOSTS
+        value: "roboleap-system.onrender.com"
+      - key: DEBUG
+        value: "False"
+    healthCheckPath: "/"
+    autoDeploy: true
+
+  - type: postgres
+    name: roboleap-database
+    plan: starter
+    region: oregon
+    # Keep this database separate from any local SQLite data.
+    
+# Notes:
+# 1. Replace __YOUR_SECRET_KEY__ and __YOUR_DATABASE_URL__ with your actual values.
+# 2. Use postgres://... URL provided by Render, or configure the database service in the Render dashboard.
+# 3. If you use a separate repo / branch, update branch and repo settings in Render.

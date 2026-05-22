@@ -31,32 +31,31 @@ class Command(BaseCommand):
     help = "Seed the database with demo data"
 
     def handle(self, *args, **options):
-        self.stdout.write("Seeding demo data...")        
-        demo_users = [
-            ("magy",   "123", "admin",     "Magy",   "", True,  True),
-            ("tagrid", "123", "admin",     "Tagrid", "", True,  True),
-            ("mawada", "123", "secretary", "Mawada", "", False, False),
-            ("admin",  "admin123", "admin", "Admin", "", True,  True),
-            ("finance","finance123","finance","Finance","", False, False),
-            ("secretary","secretary123","secretary","Secretary","", False, False),
-        ]
+        self.stdout.write("Seeding demo data...")
 
-        for username, password, role, first_name, last_name, is_staff, is_superuser in demo_users:
-            user, _ = User.objects.get_or_create(
-                username=username,
-                defaults={
-                    "email": f"{username}@roboleap.com",
-                    "role": role,
-                    "first_name": first_name,
-                    "last_name": last_name,
-                    "is_staff": is_staff,
-                    "is_superuser": is_superuser,
-                }
-            )
-            user.set_password(password)
-            user.save()
+        # Admin
+        admin, _ = User.objects.get_or_create(
+            username="admin",
+            defaults={"email": "admin@roboleap.com", "role": "admin", "is_staff": True, "is_superuser": True}
+        )
+        admin.set_password("admin123")
+        admin.save()
 
-        finance = User.objects.get(username="finance")
+        # Finance user
+        finance, _ = User.objects.get_or_create(
+            username="finance",
+            defaults={"email": "finance@roboleap.com", "role": "finance"}
+        )
+        finance.set_password("finance123")
+        finance.save()
+
+        # Secretary
+        secretary, _ = User.objects.get_or_create(
+            username="secretary",
+            defaults={"email": "secretary@roboleap.com", "role": "secretary"}
+        )
+        secretary.set_password("secretary123")
+        secretary.save()
 
         # Instructor user
         instr_user, _ = User.objects.get_or_create(
@@ -171,9 +170,6 @@ class Command(BaseCommand):
         ))
         self.stdout.write(self.style.SUCCESS(
             "\nDemo credentials:\n"
-            "  magy / 123\n"
-            "  tagrid / 123\n"
-            "  mawada / 123\n"
             "  admin / admin123\n"
             "  finance / finance123\n"
             "  secretary / secretary123\n"

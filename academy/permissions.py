@@ -37,41 +37,45 @@ class IsFinance(BasePermission):
 
 
 class IsFinanceExceptMawada(BasePermission):
-    """Finance access for all finance roles except the restricted mawada account."""
+    """Finance permission that explicitly denies a specific user named Mawada.
+
+    Admins and finance roles are allowed; the user with username 'Mawada' is denied.
+    """
     def has_permission(self, request, view):
-        user = request.user
-        return bool(
-            user and
-            user.is_authenticated and
-            user.username != "mawada" and
-            (user.is_superuser or user.is_staff or user.role in ("admin", "finance", "secretary"))
-        )
+        u = request.user
+        if not (u and u.is_authenticated):
+            return False
+        if getattr(u, "username", "").lower() == "mawada":
+            return False
+        return bool(u.is_superuser or u.is_staff or u.role in ("admin", "finance"))
 
 
 class IsFinanceOrMawadaTransactionCreate(BasePermission):
-    """Allow mawada to create payment transaction entries, but not access other finance views."""
+    """Allow finance users for any action; allow Mawada only to POST (create) transactions."""
     def has_permission(self, request, view):
-        user = request.user
-        if not user or not user.is_authenticated:
+        u = request.user
+        if not (u and u.is_authenticated):
             return False
-        if request.method == "POST" and user.username == "mawada":
+        # finance/admin/staff allowed
+        if u.is_superuser or u.is_staff or u.role in ("admin", "finance"):
             return True
-        return bool(
-            user.is_superuser or user.is_staff or user.role in ("admin", "finance", "secretary")
-        )
+        # Mawada may only create (POST)
+        if getattr(u, "username", "").lower() == "mawada" and request.method == "POST":
+            return True
+        return False
 
 
 class IsFinanceOrMawadaRead(BasePermission):
-    """Allow finance users or mawada to read student payment detail."""
+    """Allow finance users full access; allow Mawada to perform read-only GETs on student financial detail."""
     def has_permission(self, request, view):
-        user = request.user
-        if not user or not user.is_authenticated:
+        u = request.user
+        if not (u and u.is_authenticated):
             return False
-        if request.method in ("GET", "HEAD", "OPTIONS") and user.username == "mawada":
+        if u.is_superuser or u.is_staff or u.role in ("admin", "finance"):
             return True
-        return bool(
-            user.is_superuser or user.is_staff or user.role in ("admin", "finance", "secretary")
-        )
+        if getattr(u, "username", "").lower() == "mawada" and request.method in ("GET", "HEAD", "OPTIONS"):
+            return True
+        return False
 
 
 class IsSecretary(BasePermission):
