@@ -4,15 +4,14 @@ import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# 🔐 SECRET KEY (from environment variable)
+# 🔐 SECRET KEY
 SECRET_KEY = os.getenv("SECRET_KEY", "b592eb60691b9b027afc8f9ee1279588")
 
-# 🚀 Production mode
+# 🚀 Production
 DEBUG = False
 
 # 🌐 Allowed hosts
 ALLOWED_HOSTS = ["roboleap-system.onrender.com"]
-
 
 # 📦 Installed apps
 INSTALLED_APPS = [
@@ -32,12 +31,11 @@ INSTALLED_APPS = [
     "academy",
 ]
 
+# ⚙️ Middleware
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
-
-    "whitenoise.middleware.WhiteNoiseMiddleware",  # ✅ ADD THIS LINE
-
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -49,14 +47,12 @@ MIDDLEWARE = [
 ROOT_URLCONF = "roboleap.urls"
 AUTH_USER_MODEL = "academy.User"
 
-
-# 🗄️ Database (Render PostgreSQL)
+# 🗄️ Database (Render)
 DATABASES = {
     "default": dj_database_url.config(conn_max_age=600)
 }
 
-
-# 🔗 Django REST Framework
+# 🔗 DRF
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.TokenAuthentication",
@@ -69,18 +65,6 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 50,
 }
 
-import os
-
-if os.environ.get("CREATE_SUPERUSER"):
-    from django.contrib.auth import get_user_model
-    User = get_user_model()
-
-    if not User.objects.filter(username="admin").exists():
-        User.objects.create_superuser(
-            username="admin",
-            email="admin@test.com",
-            password="123"
-        )
 # 📄 Templates
 TEMPLATES = [
     {
@@ -98,22 +82,17 @@ TEMPLATES = [
     },
 ]
 
-
-# 🌍 CORS (allow React later)
+# 🌍 CORS
 CORS_ALLOW_ALL_ORIGINS = True
 
-
-# 📁 Static files (IMPORTANT for admin CSS)
+# 📁 Static files
 STATIC_URL = "/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
-
-
 
 # 🌍 Localization
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Africa/Cairo"
 USE_I18N = True
 USE_TZ = True
-
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
