@@ -32,14 +32,11 @@ INSTALLED_APPS = [
     "academy",
 ]
 
-
-# ⚙️ Middleware
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
 
-    # ✅ Static files support
-    "whitenoise.middleware.WhiteNoiseMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",  # ✅ ADD THIS LINE
 
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -48,7 +45,6 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
-
 
 ROOT_URLCONF = "roboleap.urls"
 AUTH_USER_MODEL = "academy.User"
@@ -110,7 +106,6 @@ CORS_ALLOW_ALL_ORIGINS = True
 # 📁 Static files (IMPORTANT for admin CSS)
 STATIC_URL = "/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
-STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
 
 
 
